@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+  <rect width="900" height="900" fill="#f4f4f5"/>
+  <rect x="90" y="90" width="720" height="720" rx="48" fill="#ffffff" stroke="#e4e4e7" stroke-width="8"/>
+  <path d="M210 640 L370 480 L480 590 L560 510 L690 640" fill="none" stroke="#d4d4d8" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="330" cy="360" r="54" fill="#e4e4e7"/>
+  <text x="450" y="780" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="44" fill="#a1a1aa">Fitandsleek</text>
+</svg>

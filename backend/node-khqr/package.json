@@ -1,0 +1,16 @@
+{
+  "name": "khqr",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "generate.mjs",
+  "scripts": {
+    "test": "node generate.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Bakong KHQR generator script for FitandSleek",
+  "dependencies": {
+    "ts-khqr": "^2.2.2"
+  }
+}

@@ -1,0 +1,10 @@
+/node_modules
+/vendor
+.env
+/public/storage
+/storage/*.key
+/bin
+
+fitandsleekpro-2cc88317a04d.json
+
+fitandsleekpro-2cc88317a04d.json

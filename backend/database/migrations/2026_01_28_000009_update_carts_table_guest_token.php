@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::table('carts', function (Blueprint $table) {
+            if (Schema::hasColumn('carts', 'session_id')) {
+                $table->dropColumn('session_id');
+            }
+            $table->string('guest_token')->nullable()->unique();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('carts', function (Blueprint $table) {
+            if (Schema::hasColumn('carts', 'guest_token')) {
+                $table->dropColumn('guest_token');
+            }
+            $table->uuid('session_id')->nullable()->index();
+        });
+    }
+};
