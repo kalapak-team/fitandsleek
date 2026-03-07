@@ -9,6 +9,7 @@ function parseOrigin(input) {
 function normalizeConfiguredOrigin() {
     const configured =
         import.meta.env.VITE_BACKEND_ORIGIN ||
+        import.meta.env.VITE_BACKEND_URL ||
         import.meta.env.VITE_API_BASE_URL ||
         "http://127.0.0.1:8000";
 

@@ -1,4 +1,6 @@
-const backendOrigin = import.meta.env.VITE_BACKEND_ORIGIN || "http://127.0.0.1:8000";
+import { resolveBackendOrigin } from "./backendOrigin";
+
+const backendOrigin = resolveBackendOrigin();
 
 // Normalize any lingering hardcoded dev ports so assets always resolve locally.
 const normalizePort = (url) => {
