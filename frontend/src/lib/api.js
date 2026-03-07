@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getDeviceHeaders } from "./device";
-import { resolveApiBaseUrl } from "./backendOrigin";
 
-const baseURL = resolveApiBaseUrl();
+// កែត្រង់នេះ៖ ប្រើ Variable ពី .env ផ្ទាល់ បើគ្មានឱ្យប្រើអាសយដ្ឋាន Render
+const baseURL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "https://fitandsleek-backend.onrender.com/api";
 const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "fs_token";
 
 const api = axios.create({
@@ -11,25 +11,23 @@ const api = axios.create({
     Accept: "application/json",
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Allow cookies for CSRF
+  withCredentials: true,
 });
 
-// Get CSRF token from meta tag
 const getCsrfToken = () => {
   const meta = document.querySelector('meta[name="csrf-token"]');
   return meta ? meta.getAttribute("content") : null;
 };
 
-// Attach Bearer token to requests
 api.interceptors.request.use((config) => {
-  config.baseURL = resolveApiBaseUrl();
+  // ប្រាកដថា baseURL ត្រូវបានប្រើត្រឹមត្រូវ
+  config.baseURL = baseURL;
 
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Add CSRF token if available
   const csrfToken = getCsrfToken();
   if (csrfToken) {
     config.headers["X-CSRF-TOKEN"] = csrfToken;
@@ -43,24 +41,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor to handle 401 errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
-      // Clear invalid token and redirect to login
       localStorage.removeItem(TOKEN_KEY);
       window.location.href = "/login";
     }
-
     return Promise.reject(error);
   }
 );
 
 export { TOKEN_KEY };
 export default api;
-
