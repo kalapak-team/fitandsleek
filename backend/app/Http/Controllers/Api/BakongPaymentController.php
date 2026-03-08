@@ -149,6 +149,13 @@ class BakongPaymentController extends Controller
                 'status' => 'pending',
                 'message' => $e->getMessage(),
             ], 422);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'status' => 'pending',
+                'message' => 'Unable to contact Bakong. Please try again shortly.',
+            ], 502);
         }
         $responseCode = $response['responseCode'] ?? $response['response_code'] ?? null;
         $transaction = $response['data'] ?? [];

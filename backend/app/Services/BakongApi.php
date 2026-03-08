@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\ConnectionException;
 use RuntimeException;
 
 class BakongApi
@@ -12,7 +13,7 @@ class BakongApi
         $baseUrl = rtrim(config('services.bakong.base_url'), '/');
         $token = config('services.bakong.token');
 
-        if (! $token) {
+        if (!$token) {
             throw new RuntimeException('Bakong token is not configured.');
         }
 
@@ -30,13 +31,17 @@ class BakongApi
 
         if ($verify === false) {
             $http = $http->withOptions(['verify' => false]);
-        } elseif (! empty($caBundle)) {
+        } elseif (!empty($caBundle)) {
             $http = $http->withOptions(['verify' => $caBundle]);
         }
 
-        $response = $http->post($baseUrl . '/v1/check_transaction_by_md5', [
-            'md5' => $md5,
-        ]);
+        try {
+            $response = $http->post($baseUrl . '/v1/check_transaction_by_md5', [
+                'md5' => $md5,
+            ]);
+        } catch (ConnectionException $e) {
+            throw new RuntimeException('Bakong connection failed: ' . $e->getMessage(), 0, $e);
+        }
 
         if ($response->failed()) {
             throw new RuntimeException('Bakong HTTP ' . $response->status() . ': ' . $response->body());
