@@ -11,6 +11,8 @@ use App\Models\Shipment;
 use App\Observers\OrderObserver;
 use App\Observers\ShipmentObserver;
 use Illuminate\Auth\Notifications\ResetPassword;
+use App\Models\Product;
+use App\Observers\ProductObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,11 +40,12 @@ class AppServiceProvider extends ServiceProvider
         // ៣. កំណត់ Reset Password URL
         ResetPassword::createUrlUsing(function (User $user, string $token): string {
             $frontendUrl = rtrim(config('app.frontend_url'), '/');
-            return $frontendUrl.'/reset-password?token='.$token.'&email='.urlencode($user->email);
+            return $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
         });
 
         // ៤. Model Observers
         Order::observe(OrderObserver::class);
         Shipment::observe(ShipmentObserver::class);
+        Product::observe(ProductObserver::class);
     }
 }

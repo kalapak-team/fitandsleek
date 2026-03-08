@@ -1,13 +1,17 @@
 FROM php:8.2-fpm
 
-# ១. ដំឡើង dependencies និងបណ្ណាល័យចាំបាច់
+# ១. ដំឡើង dependencies (បន្ថែម libpng, libjpeg សម្រាប់ Process រូបភាព)
 RUN apt-get update && apt-get install -y \
     libpq-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     zip \
     unzip \
     git \
     curl \
-    && docker-php-ext-install pdo pdo_pgsql
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql gd
 
 # ២. ដំឡើង Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -19,12 +23,11 @@ COPY . .
 # ៤. ដំឡើង PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# ៥. កំណត់សិទ្ធិ (Permissions) - សំខាន់ណាស់សម្រាប់ Laravel
+# ៥. កំណត់សិទ្ធិ (Permissions)
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# ៦. បើក Port (Render ប្រើផតដែលវាផ្ដល់ឱ្យ ប៉ុន្តែដាក់ 8000 ក៏បាន)
+# ៦. បើក Port
 EXPOSE 8000
 
-# ៧. ការប្រើប្រាស់ CMD ជាមួយការ Migrate
-# គួរប្រើសញ្ញា "&&" ដើម្បីឱ្យប្រាកដថាបើ Migrate បរាជ័យ Server ក៏មិនដំណើរការដែរ
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000
+# ៧. CMD លំនាំដើម (សម្រាប់ Web)
+CMD ["php", "artisan", "migrate", "--force", "&&", "php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
