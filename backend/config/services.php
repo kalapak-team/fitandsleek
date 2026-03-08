@@ -4,6 +4,9 @@ $socialiteVerify = filter_var(env('SOCIALITE_VERIFY_SSL', true), FILTER_VALIDATE
 $socialiteVerify = $socialiteVerify ?? true;
 
 $socialiteCaBundle = env('SOCIALITE_CA_BUNDLE', env('GEMINI_CA_BUNDLE'));
+$bakongVerify = filter_var(env('BAKONG_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+$bakongVerify = $bakongVerify ?? true;
+$bakongCaBundle = env('BAKONG_CA_BUNDLE', env('GEMINI_CA_BUNDLE'));
 
 $socialiteGuzzle = [
     'verify' => $socialiteVerify,
@@ -95,8 +98,9 @@ return [
         'currency' => env('BAKONG_CURRENCY', 'KHR'),
         'expired_in' => (int) env('BAKONG_EXPIRES_IN', 300),
         'webhook_secret' => env('BAKONG_WEBHOOK_SECRET'),
-        'verify' => env('BAKONG_VERIFY_SSL', true),
-        'ca_bundle' => env('BAKONG_CA_BUNDLE', env('GEMINI_CA_BUNDLE')),
+        'verify' => $bakongVerify,
+        'ca_bundle' => $bakongCaBundle,
+        'user_agent' => env('BAKONG_USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'),
     ],
 
     'aba_payway' => [

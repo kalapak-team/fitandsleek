@@ -12,6 +12,7 @@ class BakongApi
     {
         $baseUrl = rtrim(config('services.bakong.base_url'), '/');
         $token = config('services.bakong.token');
+        $userAgent = config('services.bakong.user_agent', 'fitandsleek/1.0');
 
         if (!$token) {
             throw new RuntimeException('Bakong token is not configured.');
@@ -24,9 +25,12 @@ class BakongApi
         $http = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Content-Type' => 'application/json',
+            'User-Agent' => $userAgent,
+            'Accept' => 'application/json',
         ]);
 
-        $verify = config('services.bakong.verify', true);
+        $verify = filter_var(config('services.bakong.verify', true), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $verify = $verify ?? true;
         $caBundle = config('services.bakong.ca_bundle');
 
         if ($verify === false) {
