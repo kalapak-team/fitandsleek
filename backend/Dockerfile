@@ -30,4 +30,6 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 EXPOSE 8000
 
 # ៧. CMD លំនាំដើម (សម្រាប់ Web)
-CMD ["php", "artisan", "migrate", "--force", "&&", "php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Use sh -c so the migrate step runs before the server starts, and to avoid passing
+# literal "&&" as an argument to artisan.
+CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
