@@ -142,7 +142,14 @@ class BakongPaymentController extends Controller
             }
         }
 
-        $response = $this->bakong->checkByMd5((string) $payment->md5);
+        try {
+            $response = $this->bakong->checkByMd5((string) $payment->md5);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'status' => 'pending',
+                'message' => $e->getMessage(),
+            ], 422);
+        }
         $responseCode = $response['responseCode'] ?? $response['response_code'] ?? null;
         $transaction = $response['data'] ?? [];
         $billNumber = $this->extractBillNumber((array) $transaction);
