@@ -10,8 +10,11 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
+    nodejs \
+    npm \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql gd
+    && docker-php-ext-install pdo pdo_pgsql gd \
+    && if [ ! -x /usr/bin/node ] && [ -x /usr/bin/nodejs ]; then ln -s /usr/bin/nodejs /usr/bin/node; fi
 
 # ២. ដំឡើង Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -20,8 +23,11 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www
 COPY . .
 
-# ៤. ដំឡើង PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# ៤. ដំឡើង PHP dependencies និង KHQR Node deps
+RUN composer install --no-dev --optimize-autoloader \
+    && cd /var/www/node-khqr \
+    && npm install --omit=dev \
+    && cd /var/www
 
 # ៥. កំណត់សិទ្ធិ (Permissions) ឱ្យបានត្រឹមត្រូវសម្រាប់អាការៈ Upload រូបភាព
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \

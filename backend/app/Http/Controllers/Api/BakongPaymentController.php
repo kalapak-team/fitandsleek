@@ -67,6 +67,13 @@ class BakongPaymentController extends Controller
 
         try {
             $result = $this->khqr->generate($order, $payment);
+        } catch (\RuntimeException $e) {
+            // Configuration or predictable generation issues
+            $payment->update(['status' => 'failed']);
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Throwable $e) {
             report($e);
             $payment->update(['status' => 'failed']);
@@ -93,7 +100,7 @@ class BakongPaymentController extends Controller
         $payment->load('order.items.product');
         $order = $payment->order;
 
-        if (! $order) {
+        if (!$order) {
             return response()->json(['message' => 'Payment order not found'], 404);
         }
 
@@ -143,7 +150,7 @@ class BakongPaymentController extends Controller
 
         $transactionHasBill = $billNumber !== null && $billNumber !== '';
 
-        if ((int) $responseCode === 0 && ! empty($transaction) && ($matchesOrder || ! $transactionHasBill)) {
+        if ((int) $responseCode === 0 && !empty($transaction) && ($matchesOrder || !$transactionHasBill)) {
             DB::transaction(function () use ($payment, $order, $response, $transaction) {
                 $payment->update([
                     'status' => 'paid',
@@ -164,7 +171,7 @@ class BakongPaymentController extends Controller
             ]);
         }
 
-        if ((int) $responseCode === 0 && ! empty($transaction) && ! $matchesOrder) {
+        if ((int) $responseCode === 0 && !empty($transaction) && !$matchesOrder) {
             return response()->json([
                 'status' => 'pending',
                 'message' => 'Awaiting matching bill number confirmation.',
@@ -225,7 +232,7 @@ class BakongPaymentController extends Controller
 
     private function billMatches(?string $actual, ?string $expected): bool
     {
-        if (! $expected) {
+        if (!$expected) {
             return false;
         }
 
