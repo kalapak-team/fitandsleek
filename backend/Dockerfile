@@ -23,13 +23,15 @@ COPY . .
 # ៤. ដំឡើង PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# ៥. កំណត់សិទ្ធិ (Permissions)
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# ៥. កំណត់សិទ្ធិ (Permissions) ឱ្យបានត្រឹមត្រូវសម្រាប់អាការៈ Upload រូបភាព
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # ៦. បើក Port
 EXPOSE 8000
 
-# ៧. CMD លំនាំដើម (សម្រាប់ Web)
-# Use sh -c so the migrate step runs before the server starts, and to avoid passing
-# literal "&&" as an argument to artisan.
-CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
+# ៧. CMD ពេញលេញសម្រាប់ Production (Render)
+# - លុប និងបង្កើត storage link ឡើងវិញដើម្បីជួបបញ្ហា Path នៅលើ Cloud
+# - សម្អាត Config/Cache ដើម្បីឱ្យ APP_URL ថ្មីដើរ (HTTPS)
+# - Run migration ដើម្បីបង្កើត Table ថ្មីៗ
+CMD ["sh", "-c", "rm -rf public/storage && php artisan storage:link && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
