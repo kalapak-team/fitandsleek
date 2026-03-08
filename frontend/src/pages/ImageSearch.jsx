@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import { ArrowLeft, Camera, Heart, Link as LinkIcon, Search, Upload } from 'lucide-react';
 import { resolveImageUrl } from '../lib/images.js';
 import { useWishlist } from '../state/wishlist.jsx';
@@ -269,7 +269,7 @@ export default function ImageSearch() {
 
     try {
       console.log('🌐 [sendImageToBackend] POST /api/image-search');
-      const response = await axios.post('/api/image-search', formData, {
+      const response = await api.post('/image-search', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

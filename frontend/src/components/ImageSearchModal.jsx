@@ -1,7 +1,6 @@
 
-
 import React, { useRef, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 
 export default function ImageSearchModal({ isOpen, onClose }) {
   // State machine: 'upload' | 'camera' | 'loading' | 'results'
@@ -244,7 +243,7 @@ export default function ImageSearchModal({ isOpen, onClose }) {
 
     try {
       console.log('🌐 [sendImageToBackend] POST /api/image-search');
-      const response = await axios.post('/api/image-search', formData, {
+      const response = await api.post('/image-search', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
