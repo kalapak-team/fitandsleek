@@ -141,13 +141,20 @@ class CustomerProfileController extends Controller
         ]);
 
         $hasAddresses = Address::where('user_id', auth()->id())->exists();
-        $makeDefault = $request->boolean('is_default') || ! $hasAddresses;
+        $makeDefault = $request->boolean('is_default') || !$hasAddresses;
 
         if ($makeDefault) {
             Address::where('user_id', auth()->id())->update(['is_default' => false]);
         }
 
         $legacy = $this->buildLegacyAddressFromGranular($request->all());
+
+        // Ensure non-null fallbacks for legacy required columns
+        $street = $request->input('street') ?: ($legacy['street'] ?? '');
+        $city = $request->input('city') ?: ($legacy['city'] ?? '');
+        $state = $request->input('state') ?: ($legacy['state'] ?? '');
+        $zip = $request->input('zip') ?: ($legacy['zip'] ?? '');
+        $country = $request->input('country') ?: ($legacy['country'] ?? '');
 
         $address = Address::create([
             'user_id' => auth()->id(),
@@ -160,11 +167,11 @@ class CustomerProfileController extends Controller
             'khan' => $request->input('khan'),
             'province' => $request->input('province'),
             'landmark' => $request->input('landmark'),
-            'street' => $request->input('street') ?: ($legacy['street'] ?? null),
-            'city' => $request->input('city') ?: ($legacy['city'] ?? null),
-            'state' => $request->input('state') ?: ($legacy['state'] ?? null),
-            'zip' => $request->input('zip') ?: ($legacy['zip'] ?? null),
-            'country' => $request->input('country') ?: ($legacy['country'] ?? null),
+            'street' => $street,
+            'city' => $city,
+            'state' => $state,
+            'zip' => $zip,
+            'country' => $country,
             'latitude' => $request->input('latitude'),
             'longitude' => $request->input('longitude'),
             'is_default' => $makeDefault,
@@ -251,19 +258,19 @@ class CustomerProfileController extends Controller
             ];
             $legacy = $this->buildLegacyAddressFromGranular($source);
             if (!array_key_exists('street', $payload)) {
-                $payload['street'] = $legacy['street'];
+                $payload['street'] = $legacy['street'] ?? '';
             }
             if (!array_key_exists('city', $payload)) {
-                $payload['city'] = $legacy['city'];
+                $payload['city'] = $legacy['city'] ?? '';
             }
             if (!array_key_exists('state', $payload)) {
-                $payload['state'] = $legacy['state'];
+                $payload['state'] = $legacy['state'] ?? '';
             }
             if (!array_key_exists('country', $payload)) {
-                $payload['country'] = $legacy['country'];
+                $payload['country'] = $legacy['country'] ?? '';
             }
             if (!array_key_exists('zip', $payload)) {
-                $payload['zip'] = $legacy['zip'];
+                $payload['zip'] = $legacy['zip'] ?? '';
             }
         }
 
