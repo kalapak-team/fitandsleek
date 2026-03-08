@@ -10,14 +10,18 @@ use RuntimeException;
 class ImageSearchService
 {
     private string $vectorizeUrl;
+    private ?string $vectorizeKey;
     private string $qdrantUrl;
+    private ?string $qdrantApiKey;
     private string $collection;
     private int $timeout;
 
     public function __construct()
     {
         $this->vectorizeUrl = rtrim((string) config('services.image_search.vectorize_url', 'http://localhost:9000/vectorize'), '/');
+        $this->vectorizeKey = config('services.image_search.vectorize_key');
         $this->qdrantUrl = rtrim((string) config('services.image_search.qdrant_url', 'http://localhost:6333'), '/');
+        $this->qdrantApiKey = config('services.image_search.qdrant_api_key');
         $this->collection = (string) config('services.image_search.qdrant_collection', 'products');
         $this->timeout = max(30, (int) config('services.image_search.timeout', 30));
 
@@ -44,9 +48,20 @@ class ImageSearchService
     public function vectorizeImage(UploadedFile $image): array
     {
         try {
-            $response = Http::timeout($this->timeout)
+            $request = Http::timeout($this->timeout)
+                ->withOptions([
+                    'verify' => (bool) config('services.image_search.verify_ssl', true),
+                ]);
+
+            if ($this->vectorizeKey) {
+                $request = $request->withHeaders([
+                    'X-API-Key' => $this->vectorizeKey,
+                ]);
+            }
+
+            $response = $request
                 ->attach(
-                    'image',
+                    'file',
                     file_get_contents($image->getRealPath()),
                     $image->getClientOriginalName() ?: 'image.jpg'
                 )
@@ -59,7 +74,7 @@ class ImageSearchService
             throw new RuntimeException('Vectorize service error: ' . $response->status() . ' ' . $response->body());
         }
 
-        $vector = $response->json('vector');
+        $vector = $response->json('embedding', $response->json('vector'));
 
         if (!is_array($vector) || count($vector) !== 512) {
             throw new RuntimeException('Invalid vector returned from vectorize service. Expected 512 dimensions.');
@@ -95,7 +110,7 @@ class ImageSearchService
         ];
 
         try {
-            $response = Http::timeout($this->timeout)
+            $response = $this->qdrantRequest()
                 ->put($this->qdrantUrl . '/collections/' . $this->collection . '/points', $payload);
         } catch (ConnectionException $e) {
             throw new RuntimeException('Qdrant is unreachable: ' . $e->getMessage());
@@ -108,28 +123,8 @@ class ImageSearchService
 
     public function searchSimilarProductIds(UploadedFile $image, int $limit = 12): array
     {
-        // Make sure the collection exists before searching, otherwise Qdrant returns 404.
-        $this->ensureCollectionExists();
-
         $vector = $this->vectorizeImage($image);
-
-        try {
-            $response = Http::timeout($this->timeout)
-                ->post($this->qdrantUrl . '/collections/' . $this->collection . '/points/search', [
-                    'vector' => $vector,
-                    'limit' => $limit,
-                    'with_payload' => true,
-                    'with_vector' => false,
-                ]);
-        } catch (ConnectionException $e) {
-            throw new RuntimeException('Qdrant search failed: ' . $e->getMessage());
-        }
-
-        if ($response->failed()) {
-            throw new RuntimeException('Qdrant search failed: ' . $response->status() . ' ' . $response->body());
-        }
-
-        $results = $response->json('result', []);
+        $results = $this->searchInQdrant($vector, $limit);
 
         return collect($results)
             ->map(function ($item) {
@@ -147,10 +142,50 @@ class ImageSearchService
             ->all();
     }
 
+    public function searchInQdrant(array $vector, int $limit = 5): array
+    {
+        // Make sure the collection exists before searching, otherwise Qdrant returns 404.
+        $this->ensureCollectionExists();
+
+        try {
+            $response = $this->qdrantRequest()
+                ->post($this->qdrantUrl . '/collections/' . $this->collection . '/points/search', [
+                    'vector' => $vector,
+                    'limit' => $limit,
+                    'with_payload' => true,
+                    'with_vector' => false,
+                ]);
+        } catch (ConnectionException $e) {
+            throw new RuntimeException('Qdrant search failed: ' . $e->getMessage());
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException('Qdrant search failed: ' . $response->status() . ' ' . $response->body());
+        }
+
+        return $response->json('result', []);
+    }
+
+    public function deleteProduct(int $productId): void
+    {
+        try {
+            $response = $this->qdrantRequest()
+                ->post($this->qdrantUrl . '/collections/' . $this->collection . '/points/delete', [
+                    'points' => [$productId],
+                ]);
+        } catch (ConnectionException $e) {
+            throw new RuntimeException('Qdrant delete failed: ' . $e->getMessage());
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException('Qdrant delete failed: ' . $response->status() . ' ' . $response->body());
+        }
+    }
+
     private function ensureCollectionExists(): void
     {
         try {
-            $check = Http::timeout($this->timeout)
+            $check = $this->qdrantRequest()
                 ->get($this->qdrantUrl . '/collections/' . $this->collection);
         } catch (ConnectionException $e) {
             throw new RuntimeException('Qdrant is unreachable: ' . $e->getMessage());
@@ -165,7 +200,7 @@ class ImageSearchService
         }
 
         try {
-            $create = Http::timeout($this->timeout)
+            $create = $this->qdrantRequest()
                 ->put($this->qdrantUrl . '/collections/' . $this->collection, [
                     'vectors' => [
                         'size' => 512,
@@ -179,5 +214,21 @@ class ImageSearchService
         if ($create->failed()) {
             throw new RuntimeException('Failed to create Qdrant collection: ' . $create->status() . ' ' . $create->body());
         }
+    }
+
+    private function qdrantRequest()
+    {
+        $request = Http::timeout($this->timeout)
+            ->withOptions([
+                'verify' => (bool) config('services.image_search.qdrant_verify_ssl', true),
+            ]);
+
+        if ($this->qdrantApiKey) {
+            $request = $request->withHeaders([
+                'api-key' => $this->qdrantApiKey,
+            ]);
+        }
+
+        return $request;
     }
 }

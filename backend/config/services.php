@@ -109,9 +109,24 @@ return [
     ],
 
     'image_search' => [
-        'vectorize_url' => env('IMAGE_VECTORIZE_URL', 'http://localhost:9000/vectorize'),
+        // Embedding service (e.g., HF Space FastAPI)
+        'vectorize_url' => env('AI_EMBEDDING_URL', env('IMAGE_VECTORIZE_URL', 'http://localhost:9000/vectorize')),
+        'vectorize_key' => env('AI_EMBEDDING_KEY', env('AI_SERVICE_KEY')),
+        'verify_ssl' => (
+            filter_var(env('IMAGE_SEARCH_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ?? true
+        ),
+
+        // Qdrant vector DB
         'qdrant_url' => env('QDRANT_URL', 'http://localhost:6333'),
+        'qdrant_api_key' => env('QDRANT_API_KEY'),
         'qdrant_collection' => env('QDRANT_COLLECTION', 'products'),
+        'qdrant_verify_ssl' => (
+            filter_var(env('QDRANT_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ?? true
+        ),
+
+        // Timeouts
         'timeout' => (int) env('IMAGE_SEARCH_TIMEOUT', 120),
     ],
 

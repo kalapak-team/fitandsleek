@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\Storefront\ReplacementCaseController as StorefrontR
 use App\Http\Controllers\Api\Storefront\ChatbotController;
 use App\Http\Controllers\Api\Storefront\LegalContentController;
 use App\Http\Controllers\Api\Admin\ChatbotSettingsController;
+use App\Http\Controllers\Api\ProductSearchController;
 
 // Admin
 use App\Http\Controllers\Api\Admin\HomepageAdminController;
@@ -119,6 +120,8 @@ Route::get('/notifications/public', [NotificationController::class, 'index']);
 // Image Search (vector similarity)
 Route::post('/image-search', [ImageSearchController::class, 'search']);
 Route::post('/vision/search', [ImageSearchController::class, 'search']);
+Route::post('/scan', [ImageSearchController::class, 'search']);
+Route::post('/products/search-image', [ProductSearchController::class, 'searchByImage']);
 
 // Public shipment tracking
 Route::get('/shipments/track', [ShipmentTrackingController::class, 'track']);
